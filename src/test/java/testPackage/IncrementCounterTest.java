@@ -1,8 +1,5 @@
 package testPackage;
-
 import base.TestBase;
-import org.openqa.selenium.WebDriver;
-import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
@@ -10,10 +7,8 @@ import pages.HomePage;
 import utils.ConfigReader;
 import utils.Log;
 import utils.VisualUtil;
-
 import java.awt.image.BufferedImage;
 
-import static utils.ScreenshotUtils.captureScreenshotForAllure;
 
 public class IncrementCounterTest extends TestBase {
 
@@ -44,13 +39,8 @@ public class IncrementCounterTest extends TestBase {
         homePage.incrementCounter(1);
         boolean hasChange = VisualUtil.hasVisualChange(before, after);
         softAssert.assertTrue(hasChange, "Visual change not detected after incrementing counter.");
-        try {
-            // test steps
-            softAssert.assertAll();
-        } catch (AssertionError e) {
-            captureScreenshotForAllure(driver, "AddProductFailure");
-            throw e; // rethrow so test still fails
-        }
+        softAssert.assertAll();
+
     }
 
 
