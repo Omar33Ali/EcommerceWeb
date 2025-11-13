@@ -13,7 +13,6 @@ import java.time.Duration;
 public class TestBase {
 
     protected WebDriver driver;
-    protected ConfigReader configReader;
     protected JSONObject testData;
     protected static final int implicitDuration = 10;
 

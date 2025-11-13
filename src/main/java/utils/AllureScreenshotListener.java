@@ -23,7 +23,7 @@ public class AllureScreenshotListener implements ITestListener {
     }
 
     @Attachment(value = "{name}", type = "image/png")
-    public byte[] captureScreenshot(WebDriver driver, String name) {
+    public static byte[] captureScreenshot(WebDriver driver, String name) {
         return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
     }
 }

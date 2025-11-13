@@ -92,6 +92,11 @@ public class PageBase {
         );
     }
 
+    public void waitUntilLoaded(By locator) {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(2));
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(locator));
+    }
+
     public boolean waitForTextToBePresent(By locator, String expectedText, int timeoutSecs) {
         try {
             WebDriverWait customWait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSecs));

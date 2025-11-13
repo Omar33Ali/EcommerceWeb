@@ -29,7 +29,7 @@ public class VisualUtil {
     public static void saveImage(BufferedImage image, String name) {
         try {
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            File output = new File("target/screenshots/" + name + "_" + timestamp + ".png");
+            File output = new File("screenshots/" + name + "_" + timestamp + ".png");
             output.getParentFile().mkdirs(); // ensure folder exists
             ImageIO.write(image, "PNG", output);
             System.out.println("Saved screenshot: " + output.getAbsolutePath());

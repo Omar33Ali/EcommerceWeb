@@ -22,6 +22,7 @@ public class HomePage extends PageBase {
     // Counter Locators
     By counterInput = By.xpath("//input[@type='number']");
     By sideNav = By.xpath("//button[contains(@aria-label, 'sidenav')]");
+    By loadingSpinner = By.cssSelector(".spinner");
 
     public HomePage(WebDriver driver) {
         super(driver);
@@ -85,6 +86,7 @@ public class HomePage extends PageBase {
         waitForElement(counterInput);
         clearText(counterInput);
         setText(counterInput, String.valueOf(value));
+        waitForPageLoad(2);
     }
 
     public void clickSideNav() {
@@ -92,6 +94,7 @@ public class HomePage extends PageBase {
         Allure.step("Clicking on Side Navigation button");
         waitForClickable(sideNav);
         click(sideNav);
+        waitUntilLoaded(loadingSpinner);
     }
 
 
