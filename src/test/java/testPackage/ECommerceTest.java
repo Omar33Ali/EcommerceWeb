@@ -37,7 +37,6 @@ public class ECommerceTest extends TestBase {
         addProductPage = new AddProductPage(driver);
         softAssert = new SoftAssert();
 
-
         Log.info("******* Navigating to Add Product Page *******");
         homePage.clickAddProductButton();
         Log.info("****** Filling in Product Details ********");
@@ -50,15 +49,13 @@ public class ECommerceTest extends TestBase {
         softAssert.assertEquals(homePage.getProductName(), expectedProdName, "Product Name does not match!");
         softAssert.assertEquals(homePage.getProductPrice(), expectedProdPrice, "Product Price does not match!");
         softAssert.assertEquals(homePage.getProductDescription(), expectedProdDesc, "Product Description does not match!");
-        String keyword = "iphone";
-        homePage.searchProduct(keyword);
-        Log.info("*****Searching for the product: " + keyword + " *****");
+        homePage.searchProduct(configReader.getProperty("searchKeyword"));
+        Log.info("*****Searching for the product: " + configReader.getProperty("searchKeyword") + " *****");
         List<String> productNames = homePage.getAllProductNames();
         for (String name : productNames) {
-            softAssert.assertTrue(name.toLowerCase().contains(keyword), "Product name does not contain 'iphone': " + name);
+            softAssert.assertTrue(name.toLowerCase().contains(configReader.getProperty("searchKeyword")), "Product name does not contain 'iphone': " + name);
         }
         softAssert.assertAll();
-
 
     }
 
