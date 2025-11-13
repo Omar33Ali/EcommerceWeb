@@ -12,6 +12,9 @@ import utils.ConfigReader;
 import utils.Log;
 import utils.VisualUtil;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
+
+import static utils.AllureAttachments.attachScreenshot;
 
 @Epic("Increment Counter Tests")
 @Feature("Visual Validation of Counter Increment")
@@ -39,13 +42,13 @@ public class IncrementCounterTest extends TestBase {
         homePage.clickSideNav();
         BufferedImage before = VisualUtil.capture(driver);
         VisualUtil.saveImage(before, "Counter_Before");
-        attachScreenshot(driver, "Counter Before");
+        attachScreenshot("Counter Before", ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES));
         Log.info("Captured before screenshot for visual comparison.");
 
         homePage.incrementCounter(1);
         BufferedImage after = VisualUtil.capture(driver);
         VisualUtil.saveImage(after, "Counter_After");
-        attachScreenshot(driver, "Counter After");
+        attachScreenshot("Counter After", ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES));
         Log.info("Captured after screenshots for visual comparison.");
 
 
@@ -55,8 +58,4 @@ public class IncrementCounterTest extends TestBase {
 
     }
 
-    @Attachment(value = "{name}", type = "image/png")
-    public byte[] attachScreenshot(WebDriver driver, String name) {
-        return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-    }
 }
