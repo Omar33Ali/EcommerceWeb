@@ -146,7 +146,3 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-# Notes:
-# - History persistence via Pages fetch is best-effort; for stronger persistence consider a dedicated 'allure-history' branch.
-# - TESTS_FAILED env flag ensures artifacts still upload even if tests fail; summary step exits with non-zero to mark job failed.
-# - Adjust ALLURE_VERSION in env if upgrading.
