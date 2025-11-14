@@ -134,7 +134,7 @@ jobs:
 
   publish-report:
     # Only publish Pages on successful test job (even if tests failed we still have report) but restrict to main/master pushes
-    if: (env.ENABLE_PAGES_PUBLISH == 'true') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: ${{ env.ENABLE_PAGES_PUBLISH == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
     needs: tests
     runs-on: ubuntu-latest
     steps:
@@ -155,7 +155,7 @@ jobs:
 
   deploy-pages:
     needs: publish-report
-    if: (env.ENABLE_PAGES_PUBLISH == 'true') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: ${{ env.ENABLE_PAGES_PUBLISH == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
     runs-on: ubuntu-latest
     permissions:
       pages: write
