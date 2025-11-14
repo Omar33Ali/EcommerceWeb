@@ -39,9 +39,27 @@ jobs:
 
       - name: Install Allure CLI ${{ env.ALLURE_VERSION }}
         run: |
-          curl -sL https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-commandline-${ALLURE_VERSION}.zip -o allure.zip
+          set -e
+          URL_GH="https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.zip"
+          URL_MVN="https://repo1.maven.org/maven2/io/qameta/allure/allure-commandline/${ALLURE_VERSION}/allure-commandline-${ALLURE_VERSION}.zip"
+          echo "Downloading Allure CLI $ALLURE_VERSION..."
+          if ! curl -fsSL "$URL_GH" -o allure.zip; then
+            echo "GitHub download failed or not found, falling back to Maven Central..."
+            curl -fsSL "$URL_MVN" -o allure.zip
+          fi
           unzip -q allure.zip -d allure-cli
-          echo "ALLURE_HOME=$PWD/allure-cli/allure-${ALLURE_VERSION}" >> $GITHUB_ENV
+          # Detect extracted directory name
+          if [ -d "allure-cli/allure-${ALLURE_VERSION}" ]; then
+            ALLURE_HOME="$PWD/allure-cli/allure-${ALLURE_VERSION}"
+          elif [ -d "allure-cli/allure-commandline-${ALLURE_VERSION}" ]; then
+            ALLURE_HOME="$PWD/allure-cli/allure-commandline-${ALLURE_VERSION}"
+          else
+            echo "ERROR: Unable to locate extracted Allure directory" >&2
+            ls -la allure-cli || true
+            exit 1
+          fi
+          echo "ALLURE_HOME=$ALLURE_HOME" >> $GITHUB_ENV
+          echo "$ALLURE_HOME/bin" >> $GITHUB_PATH
 
       - name: (Optional) Restore history from previous Pages deployment
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -60,7 +78,8 @@ jobs:
       - name: Generate static Allure report (HTML)
         if: always()
         run: |
-          $ALLURE_HOME/bin/allure generate $ALLURE_RESULTS_DIR -o target/site/allure-report --clean || { echo "Allure CLI generation failed"; exit 1; }
+          allure --version || { echo "Allure CLI not on PATH"; exit 1; }
+          allure generate $ALLURE_RESULTS_DIR -o target/site/allure-report --clean || { echo "Allure CLI generation failed"; exit 1; }
           if [ ! -f target/site/allure-report/app.js ]; then
             echo "ERROR: app.js missing from static report." >&2
             ls -al target/site/allure-report
@@ -145,4 +164,3 @@ jobs:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
