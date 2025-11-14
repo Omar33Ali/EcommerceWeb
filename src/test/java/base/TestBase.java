@@ -50,7 +50,6 @@ public class TestBase {
         if (gha != null) {
             return true;
         }
-        // Fallback to config.properties
         try {
             ConfigReader cr = new ConfigReader();
             String cfg = cr.getProperty("headless");
@@ -88,7 +87,6 @@ public class TestBase {
 
     @AfterMethod
     public void tearDown() {
-        // Close the browser and clean up resources
         if (driver != null) {
             driver.quit();
         }

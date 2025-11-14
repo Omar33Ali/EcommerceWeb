@@ -11,6 +11,7 @@
         <classes>
             <class name="testPackage.ECommerceTest"/>
             <class name="testPackage.IncrementCounterTest"/>
+            <class name="testPackage.ApiE2EScenariosTest"/>
         </classes>
     </test>
 

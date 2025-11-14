@@ -8,7 +8,9 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.config.EncoderConfig;
 import io.restassured.RestAssured;
+
 import java.nio.charset.StandardCharsets;
+
 import org.openqa.selenium.WebDriver;
 
 import java.util.HashMap;
@@ -51,35 +53,20 @@ public class Api extends PageBase {
         jsonPayload.put("currentPassword", currentPassword);
         jsonPayload.put("newPassword", newPassword);
 
-        // Attempt JSON first (consistent with other endpoints like login)
         Response resp = given()
                 .log().all()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
+                .config(RestAssured.config().encoderConfig(EncoderConfig.encoderConfig()
+                        .defaultContentCharset(StandardCharsets.UTF_8)
+                        .appendDefaultContentCharsetToContentTypeIfUndefined(false)))
+                .contentType("application/x-www-form-urlencoded; charset=UTF-8")
+                .accept("application/json")
                 .header("x-auth-token", token)
-                .body(jsonPayload)
+                .formParam("currentPassword", currentPassword)
+                .formParam("newPassword", newPassword)
                 .post(url)
                 .then()
                 .extract()
                 .response();
-
-        if (resp.getStatusCode() == 415) {
-            Log.info("JSON payload returned 415; retrying with UTF-8 form urlencoded.");
-            resp = given()
-                    .log().all()
-                    .config(RestAssured.config().encoderConfig(EncoderConfig.encoderConfig()
-                            .defaultContentCharset(StandardCharsets.UTF_8)
-                            .appendDefaultContentCharsetToContentTypeIfUndefined(false)))
-                    .contentType("application/x-www-form-urlencoded; charset=UTF-8")
-                    .accept("application/json")
-                    .header("x-auth-token", token)
-                    .formParam("currentPassword", currentPassword)
-                    .formParam("newPassword", newPassword)
-                    .post(url)
-                    .then()
-                    .extract()
-                    .response();
-        }
 
         Log.info("Update Password Status: " + resp.getStatusCode());
         Log.info("Update Password Response Body: " + resp.getBody().asPrettyString());
@@ -126,7 +113,6 @@ public class Api extends PageBase {
                 .body(payload)
                 .put(url)
                 .then()
-//                .log().all()
                 .extract()
                 .response();
 

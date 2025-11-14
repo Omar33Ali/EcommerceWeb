@@ -8,7 +8,6 @@ import io.restassured.response.Response;
 import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
 import pages.Api;
-import utils.DataReader;
 import utils.Log;
 
 import static io.qameta.allure.Allure.addAttachment;
@@ -17,19 +16,18 @@ import static utils.PageBase.*;
 public class ApiE2EScenariosTest extends TestBase {
 
     Api api = new Api(driver);
-    SoftAssert softassert ;
-    DataReader dataReader = new DataReader();
+    SoftAssert softassert;
 
     String name = generateUsername("user");
     String email = generateRandomEmail();
     String password = generateRandomPassword();
+    String updatedPassword;
+
     @Description("Register a new user via API and verify creation")
     @Story("User Registration and Password Update via API")
     @Test()
     public void registerNewUserUsingApi() {
         softassert = new SoftAssert();
-        // Generate random user data
-
         // Register user via API
         Log.info("Registering user via API with Name: " + name + ", Email: " + email);
         Allure.step("Registering user via API with Name: " + name + ", Email: " + email);
@@ -48,20 +46,20 @@ public class ApiE2EScenariosTest extends TestBase {
         softassert.assertAll();
     }
 
-    @Test( dependsOnMethods = {"registerNewUserUsingApi"})
+    @Test(priority = 1, dependsOnMethods = {"registerNewUserUsingApi"})
     @Description("Update password for existing user via API and verify update")
     @Story("User Registration and Password Update via API")
     public void updatePasswordForExistingUser() {
         softassert = new SoftAssert();
         // Existing user data
-        String newPassword =generateRandomPassword();
+        updatedPassword = generateRandomPassword();
         String token = api.loginAndGetToken(email, password);
         Log.info("Token received for password update: " + token);
         Allure.step("Token received for password update: " + token);
 
         // Update password via API
         Log.info("Updating password for user: " + email);
-        Response response = api.updatePasswordViaApi(token, password, newPassword);
+        Response response = api.updatePasswordViaApi(token, password, updatedPassword);
         Log.info("API Response: " + response.getBody().asPrettyString());
         addAttachment("API Password Update Response", "application/json", response.getBody().asPrettyString());
 
@@ -73,7 +71,7 @@ public class ApiE2EScenariosTest extends TestBase {
         softassert.assertAll();
     }
 
-    @Test( dependsOnMethods = {"registerNewUserUsingApi"})
+    @Test(dependsOnMethods = {"registerNewUserUsingApi"}, priority = 2)
     @Description("Create, update, and delete a note via API")
     @Story("Note Creation, Update, and Deletion via API")
     public void createUpdateAndDeleteNoteViaApi() {
@@ -82,7 +80,7 @@ public class ApiE2EScenariosTest extends TestBase {
         Log.info("Logging in to get token for note operations for user: " + email);
         Allure.step("Logging in to get token for note operations for user: " + email);
 
-        String token = api.loginAndGetToken(email, password);
+        String token = api.loginAndGetToken(email, updatedPassword);
 
         Log.info("Token received for note operations: " + token);
         Allure.step("Token received for note operations: " + token);
@@ -100,8 +98,6 @@ public class ApiE2EScenariosTest extends TestBase {
         Log.info("Note created with ID: " + noteId);
         Allure.step("Note created with ID: " + noteId);
 
-        String updatedTitle = "Updated Note Title";
-        String updatedDescription = "This is the updated content.";
         Log.info("**** Updating the note via API ****");
         Allure.step("**** Updating the note via API ****");
         Response updateResp = api.updateNoteViaApi(token, noteId,
@@ -109,14 +105,14 @@ public class ApiE2EScenariosTest extends TestBase {
                 (String) testData.get("updatedDescription"),
                 (String) testData.get("category"),
                 false);
-        softassert.assertEquals(updateResp.getStatusCode(), 200," Note update should return status 200");
+        softassert.assertEquals(updateResp.getStatusCode(), 200, " Note update should return status 200");
 
         Log.info("**** Verifying the updated note via API ****");
         Allure.step("**** Verifying the updated note via API ****");
         Response getResp = api.getNoteById(token, noteId);
-        softassert.assertEquals(getResp.getStatusCode(), 200," Fetching updated note should return status 200");
-        softassert.assertEquals(getResp.jsonPath().getString("data.title"), testData.get("updatedTitle")," Note title should be updated");
-        softassert.assertEquals(getResp.jsonPath().getString("data.description"), testData.get("updatedDescription")," Note description should be updated");
+        softassert.assertEquals(getResp.getStatusCode(), 200, " Fetching updated note should return status 200");
+        softassert.assertEquals(getResp.jsonPath().getString("data.title"), testData.get("updatedTitle"), " Note title should be updated");
+        softassert.assertEquals(getResp.jsonPath().getString("data.description"), testData.get("updatedDescription"), " Note description should be updated");
 
         Log.info("**** Deleting the note via API ****");
         Allure.step("**** Deleting the note via API ****");

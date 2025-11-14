@@ -16,13 +16,12 @@ import java.awt.image.BufferedImage;
 public class IncrementCounterTest extends TestBase {
 
     SoftAssert softAssert;
-    ConfigReader configReader;
+    ConfigReader configReader= new ConfigReader();
     HomePage homePage;
-
 
     @BeforeMethod
     public void navigateToIncrementCounter() {
-        configReader = new ConfigReader();
+        Log.info("Navigating to Increment Counter URL: " + configReader.getProperty("incrementCounterURL"));
         driver.get(configReader.getProperty("incrementCounterURL"));
     }
 

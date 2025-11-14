@@ -24,6 +24,7 @@ public class ECommerceTest extends TestBase {
 
     @BeforeMethod
     public void navigateToEcommerce() {
+        Log.info("Navigating to E-Commerce Application URL: " + configReader.getProperty("eCommerceURL"));
         driver.get(configReader.getProperty("eCommerceURL"));
     }
 

@@ -34,6 +34,7 @@ public class AddProductPage extends PageBase {
         Allure.step("Entering product price: " + productPrice);
         Log.info("Entering product price: "+ productPrice);
         waitForElement(productPriceInput);
+        clearText(productPriceInput);
         setText(productPriceInput, productPrice);
         return productPrice;
     }

@@ -45,6 +45,7 @@ public class HomePage extends PageBase {
         setText(searchInput, productName);
         clickEnter();
         waitForTextToBePresent(this.productName, productName, 1);
+        waitForTextToBePresent(productPrice, productName, 1);
     }
 
     public String getProductName() {
