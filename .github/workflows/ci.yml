@@ -17,6 +17,7 @@ jobs:
     env:
       ALLURE_RESULTS_DIR: target/allure-results
       ALLURE_VERSION: 2.24.0
+      HEADLESS: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,10 +29,22 @@ jobs:
           java-version: 17
           cache: maven
 
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Print Chrome version
+        run: |
+          which google-chrome || true
+          google-chrome --version || true
+
       - name: Maven Test (produce Allure results)
         run: |
-          # Run tests; override any testFailureIgnore to ensure failures surface (artifacts still uploaded later)
-          mvn -B clean test -DtestFailureIgnore=false || echo "TESTS_FAILED=1" >> $GITHUB_ENV
+          # Force headless and point to installed Chrome
+          export CHROME_BIN=$(which google-chrome)
+          echo "Using CHROME_BIN=$CHROME_BIN"
+          mvn -B clean test -Dheadless=true -DtestFailureIgnore=false || echo "TESTS_FAILED=1" >> $GITHUB_ENV
 
       - name: Upload raw Allure results
         if: always()

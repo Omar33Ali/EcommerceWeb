@@ -4,6 +4,7 @@ import org.json.simple.JSONObject;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.UnexpectedAlertBehaviour;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import utils.DataReader;
@@ -24,18 +25,31 @@ public class TestBase {
         // Initialize ConfigReader and load test data
         testData = DataReader.readFromResource("test_data.json");
         // Maximize the window and set implicit wait
-        driver.manage().window().maximize();
+        if (!shouldRunHeadless()) {
+            driver.manage().window().maximize();
+        }
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(implicitDuration));
     }
 
     private ChromeOptions buildChromeOptions() {
         ChromeOptions options = new ChromeOptions();
+        String chromeBin = System.getenv("CHROME_BIN");
+        if (chromeBin != null && !chromeBin.isBlank()) {
+            options.setBinary(chromeBin);
+        }
+        boolean headless = shouldRunHeadless();
+        if (headless) {
+            System.setProperty("java.awt.headless", "true");
+        }
+        options.setAcceptInsecureCerts(true);
+        options.setUnhandledPromptBehaviour(UnexpectedAlertBehaviour.IGNORE);
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-gpu");
         options.addArguments("--window-size=1920,1080");
-        if (shouldRunHeadless()) {
+        if (headless) {
             options.addArguments("--headless=new");
+            options.addArguments("--headless");
         }
         return options;
     }
@@ -45,8 +59,16 @@ public class TestBase {
         if (headlessProp != null) {
             return Boolean.parseBoolean(headlessProp);
         }
+        String headlessEnv = System.getenv("HEADLESS");
+        if (headlessEnv != null) {
+            return Boolean.parseBoolean(headlessEnv);
+        }
         String ciEnv = System.getenv("CI");
         if (ciEnv != null) {
+            return true;
+        }
+        String gha = System.getenv("GITHUB_ACTIONS");
+        if (gha != null) {
             return true;
         }
         String osName = System.getProperty("os.name", "").toLowerCase();
