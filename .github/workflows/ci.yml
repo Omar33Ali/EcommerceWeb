@@ -133,29 +133,39 @@ jobs:
           if-no-files-found: ignore
 
   publish-report:
-    # Only publish Pages on successful test job (even if tests failed we still have report) but restrict to main/master pushes
-    if: ${{ env.ENABLE_PAGES_PUBLISH == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
+    # Only attempt Pages publish on main/master; individual steps check ENABLE_PAGES_PUBLISH
+    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
     needs: tests
     runs-on: ubuntu-latest
+    outputs:
+      publish_enabled: ${{ steps.publish_flag.outputs.enabled }}
     steps:
+      - name: Record publish flag
+        id: publish_flag
+        run: |
+          echo "enabled=${{ env.ENABLE_PAGES_PUBLISH }}" >> $GITHUB_OUTPUT
+
       - name: Download static report artifact
+        if: env.ENABLE_PAGES_PUBLISH == 'true'
         uses: actions/download-artifact@v4
         with:
           name: allure-report-static
           path: allure-report
 
       - name: Prepare pages content
+        if: env.ENABLE_PAGES_PUBLISH == 'true'
         run: |
           touch allure-report/.nojekyll
 
       - name: Upload to GitHub Pages artifact store
+        if: env.ENABLE_PAGES_PUBLISH == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: allure-report
 
   deploy-pages:
     needs: publish-report
-    if: ${{ env.ENABLE_PAGES_PUBLISH == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
+    if: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && needs.publish-report.outputs.publish_enabled == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       pages: write
