@@ -8,7 +8,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch: {}
+  workflow_dispatch: { }
 
 jobs:
   tests:
@@ -146,7 +146,6 @@ jobs:
           if-no-files-found: ignore
 
   publish-report:
-    # Only attempt Pages publish on main/master; individual steps check ENABLE_PAGES_PUBLISH
     if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
     needs: tests
     runs-on: ubuntu-latest
