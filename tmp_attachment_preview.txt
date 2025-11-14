@@ -1,0 +1,5 @@
+﻿{
+    "success": false,
+    "status": 404,
+    "message": "No note was found with the provided ID, Maybe it was deleted"
+}

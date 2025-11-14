@@ -225,8 +225,31 @@ public class PageBase {
         driver.findElement(locator).clear();
     }
 
+    // Generates a random 3-digit number (100-999)
+    public static int generateRandomThreeDigitNumber() {
+        return ThreadLocalRandom.current().nextInt(100, 1000);
+    }
+
+    // Generates a username by combining a prefix and a random 3-digit number
+    public static String generateUsername(String prefix) {
+        return prefix + generateRandomThreeDigitNumber();
+    }
+
+    // Generates a random email address using a random 3-digit number
+    public static String generateRandomEmail() {
+        return "user" + generateRandomThreeDigitNumber() + "@example.com";
+    }
+
+    public static String generateRandomPassword() {
+
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&*!";
+        StringBuilder password = new StringBuilder();
+        for (int i = 0; i < 10; i++) {
+            int index = ThreadLocalRandom.current().nextInt(chars.length());
+            password.append(chars.charAt(index));
+        }
+        return password.toString();
+    }
 
 
 }
-
-

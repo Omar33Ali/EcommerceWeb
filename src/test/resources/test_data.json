@@ -1,3 +1,9 @@
 {
-  "searchKeyword": "iphone"
+  "searchKeyword": "iphone",
+  "initialTitle": "My First Note",
+  "initialDescription": "This is a description of my first note.",
+  "category": "Personal",
+  "updatedTitle": "My Updated Note",
+  "updatedDescription": "This is an updated description of my note.",
+  "noteContent": "This is the content of my first note."
 }
