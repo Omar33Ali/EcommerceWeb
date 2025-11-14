@@ -8,6 +8,8 @@ import org.openqa.selenium.UnexpectedAlertBehaviour;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import utils.DataReader;
+import utils.ConfigReader;
+import utils.Log;
 
 import java.time.Duration;
 
@@ -31,29 +33,6 @@ public class TestBase {
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(implicitDuration));
     }
 
-    private ChromeOptions buildChromeOptions() {
-        ChromeOptions options = new ChromeOptions();
-        String chromeBin = System.getenv("CHROME_BIN");
-        if (chromeBin != null && !chromeBin.isBlank()) {
-            options.setBinary(chromeBin);
-        }
-        boolean headless = shouldRunHeadless();
-        if (headless) {
-            System.setProperty("java.awt.headless", "true");
-        }
-        options.setAcceptInsecureCerts(true);
-        options.setUnhandledPromptBehaviour(UnexpectedAlertBehaviour.IGNORE);
-        options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-gpu");
-        options.addArguments("--window-size=1920,1080");
-        if (headless) {
-            options.addArguments("--headless=new");
-            options.addArguments("--headless");
-        }
-        return options;
-    }
-
     private boolean shouldRunHeadless() {
         String headlessProp = System.getProperty("headless");
         if (headlessProp != null) {
@@ -71,8 +50,40 @@ public class TestBase {
         if (gha != null) {
             return true;
         }
+        // Fallback to config.properties
+        try {
+            ConfigReader cr = new ConfigReader();
+            String cfg = cr.getProperty("headless");
+            if (cfg != null) {
+                return Boolean.parseBoolean(cfg.trim());
+            }
+        } catch (Exception ignored) {}
         String osName = System.getProperty("os.name", "").toLowerCase();
         return osName.contains("linux") || osName.contains("unix");
+    }
+
+    private ChromeOptions buildChromeOptions() {
+        ChromeOptions options = new ChromeOptions();
+        String chromeBin = System.getenv("CHROME_BIN");
+        if (chromeBin != null && !chromeBin.isBlank()) {
+            options.setBinary(chromeBin);
+        }
+        boolean headless = shouldRunHeadless();
+        Log.info("Effective headless mode: " + headless);
+        if (headless) {
+            System.setProperty("java.awt.headless", "true");
+        }
+        options.setAcceptInsecureCerts(true);
+        options.setUnhandledPromptBehaviour(UnexpectedAlertBehaviour.IGNORE);
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-gpu");
+        options.addArguments("--window-size=1920,1080");
+        if (headless) {
+            options.addArguments("--headless=new");
+            options.addArguments("--headless");
+        }
+        return options;
     }
 
     @AfterMethod
