@@ -1,40 +1,152 @@
-name: Selenium Tests with Allure
+name: CI Tests and Allure Report
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
+  workflow_dispatch: {}
 
 jobs:
-  test:
+  tests:
+    name: Build & Test (Allure)
     runs-on: ubuntu-latest
-
+    env:
+      ALLURE_RESULTS_DIR: target/allure-results
+      ALLURE_VERSION: 2.24.0
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
+          java-version: 17
+          cache: maven
 
-      - name: Build and run tests
-        run: mvn clean test
+      - name: Maven Test (produce Allure results)
+        run: |
+          # Run tests; override any testFailureIgnore to ensure failures surface (artifacts still uploaded later)
+          mvn -B clean test -DtestFailureIgnore=false || echo "TESTS_FAILED=1" >> $GITHUB_ENV
 
-      - name: Generate Allure Report
-        run: mvn allure:report
-
-      - name: Upload Allure Results
+      - name: Upload raw Allure results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-results
-          path: target/allure-results
+          path: ${{ env.ALLURE_RESULTS_DIR }}
 
-      - name: Upload Allure Report
+      - name: Install Allure CLI ${{ env.ALLURE_VERSION }}
+        run: |
+          curl -sL https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-commandline-${ALLURE_VERSION}.zip -o allure.zip
+          unzip -q allure.zip -d allure-cli
+          echo "ALLURE_HOME=$PWD/allure-cli/allure-${ALLURE_VERSION}" >> $GITHUB_ENV
+
+      - name: (Optional) Restore history from previous Pages deployment
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          # Attempt to pull existing GitHub Pages content to reuse history trend
+          PAGES_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/history/history.json"
+          echo "Attempting to fetch previous history from $PAGES_URL"
+          if curl -fsSL "$PAGES_URL" -o prev-history.json; then
+            mkdir -p $ALLURE_RESULTS_DIR/history
+            cp prev-history.json $ALLURE_RESULTS_DIR/history/history.json
+            echo "Previous history restored.";
+          else
+            echo "No previous history found or fetch failed (first run?).";
+          fi
+
+      - name: Generate static Allure report (HTML)
+        if: always()
+        run: |
+          $ALLURE_HOME/bin/allure generate $ALLURE_RESULTS_DIR -o target/site/allure-report --clean || { echo "Allure CLI generation failed"; exit 1; }
+          if [ ! -f target/site/allure-report/app.js ]; then
+            echo "ERROR: app.js missing from static report." >&2
+            ls -al target/site/allure-report
+            exit 1
+          fi
+          # Persist history for next run by copying it back into results artifact (optional)
+          if [ -d target/site/allure-report/history ]; then
+            mkdir -p $ALLURE_RESULTS_DIR/history
+            cp -r target/site/allure-report/history/* $ALLURE_RESULTS_DIR/history/ || true
+          fi
+
+      - name: List static report (debug)
+        if: always()
+        run: |
+          ls -1 target/site/allure-report | sed 's/^/REPORT_FILE: /'
+          echo "Static report size:"; du -sh target/site/allure-report || true
+
+      - name: Upload static Allure report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report
-          path: target/site/allure-report/**
+          name: allure-report-static
+          path: target/site/allure-report
 
+      - name: Upload updated history (for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-history
+          path: ${{ env.ALLURE_RESULTS_DIR }}/history
+          if-no-files-found: ignore
+
+      - name: Summarize results
+        if: always()
+        run: |
+          TOTAL_RESULTS=$(ls $ALLURE_RESULTS_DIR/*.json 2>/dev/null | wc -l || echo 0)
+          echo "Total Allure result JSON files: $TOTAL_RESULTS"
+          echo "Tests summary JSON:"; cat target/site/allure-report/widgets/summary.json || true
+          if [ "$TESTS_FAILED" = "1" ]; then
+            echo "One or more tests failed (see Surefire report / Allure results)."; exit 1; fi
+
+      - name: Upload screenshots (optional)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: screenshots
+          if-no-files-found: ignore
+
+  publish-report:
+    # Only publish Pages on successful test job (even if tests failed we still have report) but restrict to main/master pushes
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download static report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-report-static
+          path: allure-report
+
+      - name: Prepare pages content
+        run: |
+          touch allure-report/.nojekyll
+
+      - name: Upload to GitHub Pages artifact store
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: allure-report
+
+  deploy-pages:
+    needs: publish-report
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+# Notes:
+# - History persistence via Pages fetch is best-effort; for stronger persistence consider a dedicated 'allure-history' branch.
+# - TESTS_FAILED env flag ensures artifacts still upload even if tests fail; summary step exits with non-zero to mark job failed.
+# - Adjust ALLURE_VERSION in env if upgrading.
